@@ -16,6 +16,7 @@ AUDIO_FILE_METADATA = {
 class JobType(Enum):
     UPLOAD_DATA = "upload-data"
     DOWNLOAD_DATA = "download-data"
+    TRAINING = "training"
 
 
 class ArtifactType(Enum):
