@@ -1,0 +1,10 @@
+dataset: speech-waveform
+lr: 0.0000001
+batch_size: 64
+epochs: 10
+time_interval_grouping: 0.2
+embedding_hidden_layer: 512
+hidden_vector_size: 128
+heads_num: 4
+hidden_layer: 1024
+layers: 2
