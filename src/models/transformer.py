@@ -1,64 +1,33 @@
 import math
-import os
-from tempfile import TemporaryDirectory
-from typing import Tuple
 
 import torch
-from torch.nn import functional as F
 from torch import nn, Tensor
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
-import torchmetrics
-from torch.utils.data import dataset
-import lightning.pytorch as pl
-import uuid
+
+from settings import NUM_CLASSES
 
 
-class TransformerModel(pl.LightningModule):
-    def __init__(self, lr: float, input_size: int, embedding_hidden: int, d_model: int, nhead: int, d_hid: int,
-                 nlayers: int, n_tokens: int, dropout: float = 0.2):
+class TransformerModel(nn.Module):
+    def __init__(
+        self,
+        input_size: int,
+        embedding_hidden: int,
+        hidden_vector_size: int,
+        heads_num: int,
+        hidden_layer_size: int,
+        layers_num: int,
+        max_input_size: int,
+        dropout: float = 0.2,
+    ):
         super().__init__()
-        self.model_type = 'Transformer'
-        self.pos_encoder = PositionalEncoding(d_model, dropout, max_len=16000)
-        encoder_layers = TransformerEncoderLayer(d_model, nhead, d_hid, dropout, batch_first=True)
-        self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
-        self.embedding = Embedding(input_size, d_model, embedding_hidden)
-        self.d_model = d_model
-        self.lr = lr
-        self.linear = nn.Linear(d_model, n_tokens)
+        self.pos_encoder = PositionalEncoding(hidden_vector_size, dropout, max_len=max_input_size)
+        encoder_layers = TransformerEncoderLayer(hidden_vector_size, heads_num, hidden_layer_size, dropout, batch_first=True)
+        self.transformer_encoder = TransformerEncoder(encoder_layers, layers_num)
+        self.embedding = Embedding(input_size, hidden_vector_size, embedding_hidden)
+        self.hidden_vector_size = hidden_vector_size
+        self.linear = nn.Linear(hidden_vector_size, NUM_CLASSES)
 
         self.init_weights()
-
-        # Metrics
-        self.train_acc = torchmetrics.Accuracy(
-            task="multiclass",
-            num_classes=n_tokens,
-            average="weighted",
-        )
-        self.valid_acc = torchmetrics.Accuracy(
-            task="multiclass",
-            num_classes=n_tokens,
-            average="weighted",
-        )
-        self.test_acc = torchmetrics.Accuracy(
-            task="multiclass",
-            num_classes=n_tokens,
-            average="weighted",
-        )
-
-        self.best_model_name = ""
-        self.lowest_valid_loss = float("inf")
-
-        parent_dir = "run_checkpoints"
-        if not os.path.exists("run_checkpoints"):
-            os.mkdir(parent_dir)
-        self.run_dir = os.path.join(parent_dir, f"runs_{uuid.uuid4().hex}")
-        os.mkdir(self.run_dir)
-
-    def _save_locally(self):
-        path = os.path.join(self.run_dir, f"epoch_{self.current_epoch}.pth")
-        torch.save(self.state_dict(), path)
-
-        return path
 
     def init_weights(self) -> None:
         initrange = 0.1
@@ -73,58 +42,12 @@ class TransformerModel(pl.LightningModule):
         Returns:
             output Tensor of shape ``[batch_size, seq_len, ntoken]``
         """
-        src = self.embedding(src) * math.sqrt(self.d_model)
+        src = self.embedding(src) * math.sqrt(self.hidden_vector_size)
         src = self.pos_encoder(src)
         output = self.transformer_encoder(src)
         output = output.mean(dim=1)
         output = self.linear(output)
         return output
-
-    def loss(self, x, y):
-        logits = self(x)
-        loss = F.cross_entropy(logits, y)
-
-        return logits, loss
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(
-            self.parameters(),
-            lr=self.lr,
-        )
-
-    def training_step(self, batch, batch_idx):
-        xs, ys = batch
-        preds, loss = self.loss(xs, ys)
-        preds = torch.argmax(preds, 1)
-
-        # logging metrics we calculated by hand
-        self.log('train/loss', loss, on_epoch=True, on_step=True)
-        # logging a pl.Metric
-        self.train_acc(preds, ys)
-        self.log('train/accuracy', self.train_acc, on_epoch=True, on_step=True)
-
-        return loss
-
-    def test_step(self, batch, batch_idx):
-        xs, ys = batch
-        logits, loss = self.loss(xs, ys)
-        preds = torch.argmax(logits, 1)
-
-        self.log("test/loss", loss, on_step=False, on_epoch=True)
-        self.test_acc(preds, ys)
-        self.log(f'test/accuracy', self.test_acc, on_epoch=True, on_step=False)
-
-    def validation_step(self, batch, batch_idx):
-        xs, ys = batch
-        logits, loss = self.loss(xs, ys)
-        preds = torch.argmax(logits, 1)
-
-        self.log(f"validation/loss", loss, on_epoch=True, on_step=False)
-        self.valid_acc(preds, ys)
-        self.log(f'validation/accuracy', self.valid_acc, on_epoch=True, on_step=False)
-
-    def on_validation_epoch_end(self):
-        path = self._save_locally()
 
 
 class PositionalEncoding(nn.Module):

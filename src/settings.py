@@ -11,6 +11,7 @@ AUDIO_FILE_METADATA = {
     "bits_per_sample": 16,
     "num_channels": 1,
 }
+NUM_CLASSES = len(ALL_CLASSES)
 
 
 class JobType(Enum):
@@ -21,6 +22,7 @@ class JobType(Enum):
 
 class ArtifactType(Enum):
     DATASET = "dataset"
+    MODEL = "model"
 
 
 class SplitType(Enum):

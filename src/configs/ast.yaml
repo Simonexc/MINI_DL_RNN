@@ -1,0 +1,10 @@
+dataset: speech-waveform
+model_name: AST
+model_class: FineTunedAST
+feature_processor: curried_ast_processor
+
+lr: 0.00001
+batch_size: 4
+epochs: 5
+
+model_params: []

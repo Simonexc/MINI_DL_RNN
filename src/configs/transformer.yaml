@@ -1,10 +1,25 @@
 dataset: speech-waveform
-lr: 0.0000001
+model_name: transformer
+model_class: TransformerModel
+
+lr: 0.000001
 batch_size: 64
 epochs: 10
-time_interval_grouping: 0.2
-embedding_hidden_layer: 512
+
+input_size: 3200
+embedding_hidden: 512
 hidden_vector_size: 128
 heads_num: 4
-hidden_layer: 1024
-layers: 2
+hidden_layer_size: 1024
+layers_num: 2
+max_input_size: 16000
+dropout: 0.2
+model_params:
+  - input_size
+  - embedding_hidden
+  - hidden_vector_size
+  - heads_num
+  - hidden_layer_size
+  - layers_num
+  - max_input_size
+  - dropout

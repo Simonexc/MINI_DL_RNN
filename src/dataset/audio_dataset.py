@@ -15,11 +15,8 @@ class BaseAudioDataset(Dataset, ABC):
     NAME: str
     DESCRIPTION: str
 
-    def __init__(
-            self, audio_dir: str
-    ):
+    def __init__(self, audio_dir: str):
         self.audio_dir = audio_dir
-
         self.audio_files = self.get_audio()
 
     def __len__(self) -> int:
