@@ -39,6 +39,6 @@ This file specifies the whole training process. The required attributes are:
 it should also be added to the YAML
 
 You can also specify custom feature processor (if required). The feature processor
-function needs to be a [curried function](https://en.wikipedia.org/wiki/Currying) which doesn't
+class which inherits interface after `BaseProcessor` (has `__call__` method implemented), doesn't
 require any parameters (in the future we might need to add some parameters but for now it is not supported) and is located
 in `src/dataset/feature_processors.py`.
