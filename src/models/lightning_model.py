@@ -9,8 +9,7 @@ import lightning.pytorch as pl
 import numpy as np
 import wandb
 
-from settings import NUM_CLASSES, ArtifactType
-from dataset.feature_processors import BaseProcessor
+from settings import NUM_CLASSES, ALL_CLASSES, ArtifactType
 
 
 class LightningModel(pl.LightningModule):
@@ -19,38 +18,66 @@ class LightningModel(pl.LightningModule):
         model: nn.Module,
         model_name: str,
         lr: float,
+        l2_penalty: float,
+        betas: tuple[float, float],
         upload_best_model: bool = True,
     ):
         super().__init__()
         self.model = model
         self.model_name = model_name
         self.lr = lr
+        self.l2_penalty = l2_penalty
+        self.betas = betas
         self.upload_best_model = upload_best_model
 
         # Metrics
         self.train_acc = torchmetrics.Accuracy(
-            task="multiclass",
-            num_classes=NUM_CLASSES,
-            average="weighted",
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
         )
         self.valid_acc = torchmetrics.Accuracy(
-            task="multiclass",
-            num_classes=NUM_CLASSES,
-            average="weighted",
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
         )
         self.test_acc = torchmetrics.Accuracy(
-            task="multiclass",
-            num_classes=NUM_CLASSES,
-            average="weighted",
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
+        )
+        self.train_prec = torchmetrics.Precision(
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
+        )
+        self.valid_prec = torchmetrics.Precision(
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
+        )
+        self.test_prec = torchmetrics.Precision(
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
+        )
+        self.train_recall = torchmetrics.Recall(
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
+        )
+        self.test_recall = torchmetrics.Recall(
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
+        )
+        self.valid_recall = torchmetrics.Recall(
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
+        )
+        self.train_f1score = torchmetrics.F1Score(
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
+        )
+        self.test_f1score = torchmetrics.F1Score(
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
+        )
+        self.valid_f1score = torchmetrics.F1Score(
+            task="multiclass", num_classes=NUM_CLASSES, average="weighted"
         )
 
         self.valid_losses = []
         self.test_losses = []
+        self.test_probabilities = []
+        self.test_true_values = []
 
         # Model
         self.best_model_name = ""
         self.lowest_valid_loss = float("inf")
         self.lowest_valid_epoch: int | None = None
+        self.using_best = False
 
         parent_dir = "run_checkpoints"
         if not os.path.exists("run_checkpoints"):
@@ -88,6 +115,7 @@ class LightningModel(pl.LightningModule):
 
     def load_best_model(self):
         self.load_local(self.best_model_name)
+        self.using_best = True
 
     def forward(self, x: Tensor) -> Tensor:
         return self.model(x)
@@ -102,6 +130,8 @@ class LightningModel(pl.LightningModule):
         return torch.optim.Adam(
             self.parameters(),
             lr=self.lr,
+            weight_decay=self.l2_penalty,
+            betas=self.betas,
         )
 
     def on_validation_epoch_start(self):
@@ -109,15 +139,25 @@ class LightningModel(pl.LightningModule):
 
     def on_test_epoch_start(self):
         self.test_losses = []
+        self.test_probabilities = []
+        self.test_true_values = []
 
     def training_step(self, batch: tuple[Tensor, Tensor], batch_idx: int) -> Tensor:
         xs, ys = batch
         preds, loss = self.loss(xs, ys)
         preds = torch.argmax(preds, 1)
+        self.using_best = False
 
         self.log('train/loss', loss, on_epoch=True, on_step=True)
         self.train_acc(preds, ys)
         self.log('train/accuracy', self.train_acc, on_epoch=True, on_step=True)
+        self.train_prec(preds, ys)
+        self.log("train/precision", self.train_prec, on_epoch=True, on_step=True)
+        self.train_recall(preds, ys)
+        self.log("train/recall", self.train_recall, on_epoch=True, on_step=True)
+        self.train_f1score(preds, ys)
+        self.log("train/f1_score", self.train_f1score, on_epoch=True, on_step=True)
+        self.log("train/epoch", self.current_epoch, on_epoch=False, on_step=True)
 
         return loss
 
@@ -125,23 +165,48 @@ class LightningModel(pl.LightningModule):
         xs, ys = batch
         logits, loss = self.loss(xs, ys)
         preds = torch.argmax(logits, 1)
-        self.valid_losses.append(loss.cpu())
 
-        self.log(f"validation/loss", loss, on_epoch=True, on_step=False)
+        suffix = ""
+        if self.using_best:
+            suffix = "_best"
+        self.log(f"validation{suffix}/loss", loss, on_epoch=True, on_step=False)
         self.valid_acc(preds, ys)
-        self.log(f'validation/accuracy', self.valid_acc, on_epoch=True, on_step=False)
+        self.log(f'validation{suffix}/accuracy', self.valid_acc, on_epoch=True, on_step=False)
+        self.valid_prec(preds, ys)
+        self.log(f"validation{suffix}/precision", self.valid_prec, on_epoch=True,
+                 on_step=False)
+        self.valid_recall(preds, ys)
+        self.log(f"validation{suffix}/recall", self.valid_recall, on_epoch=True,
+                 on_step=False)
+        self.valid_f1score(preds, ys)
+        self.log(f"validation{suffix}/f1_score", self.valid_f1score, on_epoch=True,
+                 on_step=False)
+        self.log(f"validation{suffix}/epoch", self.current_epoch, on_epoch=False, on_step=True)
+
+        self.valid_losses.append(loss.cpu())
 
     def test_step(self, batch: tuple[Tensor, Tensor], batch_idx: int):
         xs, ys = batch
         logits, loss = self.loss(xs, ys)
         preds = torch.argmax(logits, 1)
-        self.test_losses.append(loss.cpu())
 
         self.log(f"test/loss", loss, on_epoch=True, on_step=False)
         self.test_acc(preds, ys)
         self.log(f'test/accuracy', self.test_acc, on_epoch=True, on_step=False)
+        self.test_prec(preds, ys)
+        self.log("test/precision", self.test_prec, on_epoch=True, on_step=False)
+        self.test_recall(preds, ys)
+        self.log("test/recall", self.test_recall, on_epoch=True, on_step=False)
+        self.test_f1score(preds, ys)
+        self.log("test/f1_score", self.test_f1score, on_epoch=True, on_step=False)
+
+        self.test_losses.append(loss.cpu())
+        self.test_probabilities.append(torch.exp(logits))
+        self.test_true_values.append(ys)
 
     def on_validation_epoch_end(self):
+        if self.using_best:
+            return
         path = self._save_local()
 
         avg_loss = np.mean(self.valid_losses)
@@ -157,3 +222,15 @@ class LightningModel(pl.LightningModule):
             self._save_remote(
                 self.model_name, epoch=self.lowest_valid_epoch, loss=avg_loss
             )
+
+        flattened_probabilities = torch.flatten(
+            torch.cat(self.test_probabilities)).view(-1, NUM_CLASSES).to(
+            "cpu")
+        flattened_true_values = torch.flatten(torch.cat(self.test_true_values)).to(
+            "cpu")
+        self.logger.experiment.log(
+            {"test/confusion_matrix": wandb.plot.confusion_matrix(
+                probs=flattened_probabilities,
+                y_true=flattened_true_values.numpy().tolist(),
+                class_names=ALL_CLASSES)}
+        )
