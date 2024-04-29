@@ -1,0 +1,9 @@
+dataset: speech-waveform
+lr: 0.000001 # Learning rate
+batch_size: 32
+epochs: 10
+time_interval_grouping: 0.2
+embedding_hidden_layer: 512 # Hidden units in embedding layer
+hidden_vector_size: 128 # LSTM hidden state size
+num_layers: 2 # Number of LSTM layers
+dropout_rate: 0.5 # Dropout rate in LSTM for regularization

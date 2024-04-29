@@ -4,6 +4,7 @@ import yaml
 
 import lightning.pytorch as pl
 from lightning.pytorch.loggers import WandbLogger
+from models.lstm import LSTMModel
 import wandb
 
 from dataset.training_dataset import SpeechDataset
@@ -29,9 +30,7 @@ if __name__ == "__main__":
     # Parse the arguments
     args = parser.parse_args()
 
-    with open(
-        os.path.join("configs", f"{args.yaml_file}.yaml"), "r"
-    ) as file:
+    with open(os.path.join("configs", f"{args.yaml_file}.yaml"), "r") as file:
         experiment_config = yaml.safe_load(file)
 
     with wandb.init(
