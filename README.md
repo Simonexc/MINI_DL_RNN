@@ -42,3 +42,10 @@ You can also specify custom feature processor (if required). The feature process
 class which inherits interface after `BaseProcessor` (has `__call__` method implemented), doesn't
 require any parameters (in the future we might need to add some parameters but for now it is not supported) and is located
 in `src/dataset/feature_processors.py`.
+
+#### Sweeps
+Sweeps are collections of runs which explore the parameter space. We can define the configuration of sweeps in a YAML
+file located in `src/config/sweeps`. Here is more info about [sweeps](https://docs.wandb.ai/guides/sweeps).
+
+We can create a sweep using `python sweep.py <name of config file>`. It will create a sweep in W&B and return its ID.
+We can connect to existing sweep using `python run_agent.py <sweep id>`.
