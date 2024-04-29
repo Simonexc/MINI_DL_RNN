@@ -1,17 +1,12 @@
 import argparse
 import os
 import yaml
-
-import lightning.pytorch as pl
-from lightning.pytorch.loggers import WandbLogger
-from models.lstm import LSTMModel
 import wandb
 
-from dataset.training_dataset import SpeechDataset
-import models
-from models.lightning_model import LightningModel
-import dataset.feature_processors as feature_processors
+from lightning.pytorch.loggers import WandbLogger
+
 from settings import PROJECT, ENTITY, JobType
+from trainer.train import train
 
 
 if __name__ == "__main__":
@@ -24,13 +19,13 @@ if __name__ == "__main__":
         "yaml_file",
         type=str,
         help="Path to the YAML configuration file for the experiment "
-        "(assume that parent directory is configs).",
+        "(assume that parent directory is src/configs/single_runs).",
     )
 
     # Parse the arguments
     args = parser.parse_args()
 
-    with open(os.path.join("configs", f"{args.yaml_file}.yaml"), "r") as file:
+    with open(os.path.join("configs", "single_runs", f"{args.yaml_file}.yaml"), "r") as file:
         experiment_config = yaml.safe_load(file)
 
     with wandb.init(
@@ -40,35 +35,8 @@ if __name__ == "__main__":
         config=experiment_config,
     ) as run:
         config = wandb.config
+        wandb_logger = WandbLogger(project=PROJECT, entity=ENTITY)
         data_artifact = run.use_artifact(f"{config.dataset}:latest")
         audio_dir = data_artifact.download()
 
-        feature_processor: str | None = getattr(config, "feature_processor", None)
-        data = SpeechDataset(
-            audio_dir,
-            config.batch_size,
-            feature_processor and getattr(feature_processors, feature_processor)(),
-        )
-        data.setup()
-        wandb_logger = WandbLogger(project=PROJECT, entity=ENTITY)
-
-        trainer = pl.Trainer(
-            logger=wandb_logger,
-            log_every_n_steps=10,
-            max_epochs=config.epochs,
-        )
-
-        model = getattr(models, config.model_class)(
-            **{
-                key: getattr(config, key)
-                for key in config.model_params
-            }
-        )
-        pl_model = LightningModel(
-            model,
-            config.model_name,
-            config.lr,
-        )
-        trainer.fit(pl_model, data)
-        pl_model.load_best_model()
-        trainer.test(pl_model, data)
+        train(config, audio_dir, wandb_logger)

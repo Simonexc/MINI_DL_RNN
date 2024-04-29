@@ -4,7 +4,7 @@ model_class: FineTunedAST
 feature_processor: ASTProcessor
 
 lr: 0.00001
-batch_size: 4
+batch_size: 3
 epochs: 5
 
 model_params: []

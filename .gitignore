@@ -163,6 +163,6 @@ wandb
 artifacts
 lightning_logs
 DL_PROJECT_RNN
-run*
+run_checkpoints
 
 !/**/.gitkeep
