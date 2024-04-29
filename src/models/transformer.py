@@ -5,6 +5,7 @@ from torch import nn, Tensor
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 from settings import NUM_CLASSES
+from .embeddings import FCEmbedding
 
 
 class TransformerModel(nn.Module):
@@ -23,7 +24,7 @@ class TransformerModel(nn.Module):
         self.pos_encoder = PositionalEncoding(hidden_vector_size, dropout, max_len=max_input_size)
         encoder_layers = TransformerEncoderLayer(hidden_vector_size, heads_num, hidden_layer_size, dropout, batch_first=True)
         self.transformer_encoder = TransformerEncoder(encoder_layers, layers_num)
-        self.embedding = Embedding(input_size, hidden_vector_size, embedding_hidden)
+        self.embedding = FCEmbedding(input_size, hidden_vector_size, embedding_hidden)
         self.hidden_vector_size = hidden_vector_size
         self.linear = nn.Linear(hidden_vector_size, NUM_CLASSES)
 
@@ -70,19 +71,3 @@ class PositionalEncoding(nn.Module):
         """
         x = x + self.pe[:, :x.shape[1]]
         return self.dropout(x)
-
-
-class Embedding(nn.Module):
-    def __init__(self, input_size: int, d_model: int, hidden_layers: int):
-        super().__init__()
-        self.input_size = input_size
-        self.d_model = d_model
-        self.linear1 = nn.Linear(input_size, hidden_layers)
-        self.linear2 = nn.Linear(hidden_layers, d_model)
-        self.relu = nn.ReLU()
-
-    def forward(self, x):
-        batch_size = x.shape[0]
-        x = x.view(-1, self.input_size)
-        x = self.relu(self.linear1(x))
-        return self.linear2(x).view(batch_size, -1, self.d_model)
