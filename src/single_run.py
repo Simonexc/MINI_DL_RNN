@@ -4,6 +4,7 @@ import yaml
 
 import lightning.pytorch as pl
 from lightning.pytorch.loggers import WandbLogger
+from models.lstm import LSTMModel
 import wandb
 
 from dataset.training_dataset import SpeechDataset
@@ -27,13 +28,14 @@ if __name__ == "__main__":
     # Parse the arguments
     args = parser.parse_args()
 
-    with open(
-        os.path.join("configs", f"{args.yaml_file}.yaml"), "r"
-    ) as file:
+    with open(os.path.join("configs", f"{args.yaml_file}.yaml"), "r") as file:
         experiment_config = yaml.safe_load(file)
 
     with wandb.init(
-            project=PROJECT, entity=ENTITY, job_type=JobType.TRAINING.value, config=experiment_config
+        project=PROJECT,
+        entity=ENTITY,
+        job_type=JobType.TRAINING.value,
+        config=experiment_config,
     ) as run:
         config = wandb.config
         data_artifact = run.use_artifact(f"{config.dataset}:latest")
@@ -47,16 +49,26 @@ if __name__ == "__main__":
             log_every_n_steps=10,
             max_epochs=config.epochs,
         )
-
-        model = TransformerModel(
-            config.lr,
-            int(16000 * config.time_interval_grouping),
-            config.embedding_hidden_layer,
-            config.hidden_vector_size,
-            config.heads_num,
-            config.hidden_layer,
-            config.layers,
-            len(ALL_CLASSES),
-        )
+        if args.yaml_file == "lstm":
+            print("lstm!!")
+            model = LSTMModel(
+                config.lr,
+                int(16000 * config.time_interval_grouping),
+                config.embedding_hidden_layer,
+                config.hidden_vector_size,
+                config.num_layers,
+                len(ALL_CLASSES),
+            )
+        else:
+            model = TransformerModel(
+                config.lr,
+                int(16000 * config.time_interval_grouping),
+                config.embedding_hidden_layer,
+                config.hidden_vector_size,
+                config.heads_num,
+                config.hidden_layer,
+                config.layers,
+                len(ALL_CLASSES),
+            )
         trainer.fit(model, data)
         trainer.test(model, data)
