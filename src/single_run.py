@@ -8,8 +8,10 @@ from models.lstm import LSTMModel
 import wandb
 
 from dataset.training_dataset import SpeechDataset
-from models.transformer import TransformerModel
-from settings import PROJECT, ENTITY, JobType, ALL_CLASSES
+import models
+from models.lightning_model import LightningModel
+import dataset.feature_processors as feature_processors
+from settings import PROJECT, ENTITY, JobType
 
 
 if __name__ == "__main__":
@@ -40,35 +42,33 @@ if __name__ == "__main__":
         config = wandb.config
         data_artifact = run.use_artifact(f"{config.dataset}:latest")
         audio_dir = data_artifact.download()
-        data = SpeechDataset(audio_dir, config.batch_size)
+
+        feature_processor: str | None = getattr(config, "feature_processor", None)
+        data = SpeechDataset(
+            audio_dir,
+            config.batch_size,
+            feature_processor and getattr(feature_processors, feature_processor)(),
+        )
         data.setup()
-        wandb_logger = WandbLogger(project=PROJECT)
+        wandb_logger = WandbLogger(project=PROJECT, entity=ENTITY)
 
         trainer = pl.Trainer(
             logger=wandb_logger,
             log_every_n_steps=10,
             max_epochs=config.epochs,
         )
-        if args.yaml_file == "lstm":
-            print("lstm!!")
-            model = LSTMModel(
-                config.lr,
-                int(16000 * config.time_interval_grouping),
-                config.embedding_hidden_layer,
-                config.hidden_vector_size,
-                config.num_layers,
-                len(ALL_CLASSES),
-            )
-        else:
-            model = TransformerModel(
-                config.lr,
-                int(16000 * config.time_interval_grouping),
-                config.embedding_hidden_layer,
-                config.hidden_vector_size,
-                config.heads_num,
-                config.hidden_layer,
-                config.layers,
-                len(ALL_CLASSES),
-            )
-        trainer.fit(model, data)
-        trainer.test(model, data)
+
+        model = getattr(models, config.model_class)(
+            **{
+                key: getattr(config, key)
+                for key in config.model_params
+            }
+        )
+        pl_model = LightningModel(
+            model,
+            config.model_name,
+            config.lr,
+        )
+        trainer.fit(pl_model, data)
+        pl_model.load_best_model()
+        trainer.test(pl_model, data)
