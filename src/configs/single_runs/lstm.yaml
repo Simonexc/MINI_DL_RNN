@@ -4,7 +4,7 @@ model_class: LSTMModel
 
 lr: 0.000001 # Learning rate
 batch_size: 32
-epochs: 1
+epochs: 10
 
 input_size: 3200
 embedding_hidden: 512 # Hidden units in embedding layer
