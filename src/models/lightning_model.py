@@ -10,10 +10,17 @@ import numpy as np
 import wandb
 
 from settings import NUM_CLASSES, ArtifactType
+from dataset.feature_processors import BaseProcessor
 
 
 class LightningModel(pl.LightningModule):
-    def __init__(self, model: nn.Module, model_name: str, lr: float, upload_best_model: bool = True):
+    def __init__(
+        self,
+        model: nn.Module,
+        model_name: str,
+        lr: float,
+        upload_best_model: bool = True,
+    ):
         super().__init__()
         self.model = model
         self.model_name = model_name

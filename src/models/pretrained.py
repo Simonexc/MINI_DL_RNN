@@ -1,3 +1,4 @@
+from torch import Tensor
 from transformers import ASTConfig, ASTForAudioClassification
 
 from settings import NUM_CLASSES
@@ -11,3 +12,10 @@ class FineTunedAST(ASTForAudioClassification):
         config.num_labels = NUM_CLASSES
 
         super().__init__(config)
+
+    def forward(
+        self,
+        *args,
+        **kwargs
+    ) -> Tensor:
+        return super().forward(*args, **kwargs).logits
