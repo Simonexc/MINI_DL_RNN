@@ -1,5 +1,5 @@
 dataset: speech-waveform
-model_name: AST
+model_name: ASTEmbeddingTransformer
 model_class: FineTunedAST
 feature_processor: ASTProcessor
 
