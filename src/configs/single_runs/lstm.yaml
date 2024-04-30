@@ -2,9 +2,9 @@ dataset: speech-waveform
 model_name: lstm
 model_class: LSTMModel
 
-lr: 0.000001 # Learning rate
-batch_size: 32
-epochs: 10
+lr: 0.001 # Learning rate
+batch_size: 256
+epochs: 20
 
 input_size: 3200
 embedding_hidden: 512 # Hidden units in embedding layer

@@ -14,6 +14,7 @@ def train(config: wandb.sdk.Config, audio_dir: str, wandb_logger: WandbLogger):
         audio_dir,
         config.batch_size,
         feature_processor and getattr(feature_processors, feature_processor)(),
+        getattr(config, "train_num_samples", None),
     )
     data.setup()
 
