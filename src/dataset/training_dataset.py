@@ -1,9 +1,9 @@
 from torch.utils.data import TensorDataset, DataLoader, default_collate
+from torch.utils.data.sampler import WeightedRandomSampler
 from torch import Tensor
 import lightning.pytorch as pl
 import torch
 import os
-from typing import Callable
 
 from settings import SplitType
 from .feature_processors import BaseProcessor
@@ -15,15 +15,19 @@ class SpeechDataset(pl.LightningDataModule):
         dataset_dir: str,
         batch_size: int,
         feature_processor: BaseProcessor | None,
+        train_num_samples: int | None,
     ):
         super().__init__()
         self.dataset_dir = dataset_dir
         self.batch_size = batch_size
         self.feature_processor = feature_processor
+        self.train_num_samples = train_num_samples
 
         self.train: TensorDataset | None = None
         self.val: TensorDataset | None = None
         self.test: TensorDataset | None = None
+
+        self.train_weights: Tensor | None = None
 
     @staticmethod
     def _load_dataset(path: str) -> TensorDataset:
@@ -36,6 +40,9 @@ class SpeechDataset(pl.LightningDataModule):
             self.train = self._load_dataset(
                 os.path.join(self.dataset_dir, f"{SplitType.TRAIN.value}.pt")
             )
+            self.train_weights = (1 / self.train.tensors[1].unique(return_counts=True)[1])[
+                self.train.tensors[1]
+            ]
             self.val = self._load_dataset(
                 os.path.join(self.dataset_dir, f"{SplitType.VALIDATION.value}.pt")
             )
@@ -55,11 +62,16 @@ class SpeechDataset(pl.LightningDataModule):
         return collate_fn
 
     def train_dataloader(self) -> DataLoader:
+        sampler = WeightedRandomSampler(
+            self.train_weights,
+            self.train_num_samples or self.train.tensors[1].shape[0],
+            replacement=True,
+        )
         return DataLoader(
             self.train,
             batch_size=self.batch_size,
             num_workers=4,
-            shuffle=True,
+            sampler=sampler,
             collate_fn=self._process_features(),
         )
 

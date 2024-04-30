@@ -16,13 +16,13 @@ parameters:
   batch_size:
     value: 3
   epochs:
-    value: 5
+    value: 6
   model_params:
     value: [ ]
 
   lr:
     distribution: log_uniform_values
-    min: 0.0000001
+    min: 0.000001
     max: 0.01
   beta1:
     distribution: log_uniform_values
