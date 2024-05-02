@@ -3,7 +3,7 @@ model_name: TransformerSpectogram
 model_class: TransformerSpectogramModel
 lr: 0.00003
 batch_size: 64
-epochs: 10
+epochs: 20
 
 config_dir: ast-feature-extractor-config
 max_length: 100
@@ -22,7 +22,7 @@ model_params:
   - hidden_layer_size
   - layers_num
   - dropout
-heads_num: 4
+heads_num: 6
 hidden_layer_size: 2048
-layers_num: 4
-dropout: 0.1
+layers_num: 6
+dropout: 0.2
