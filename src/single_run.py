@@ -32,10 +32,10 @@ if __name__ == "__main__":
         project=PROJECT,
         entity=ENTITY,
         job_type=JobType.TRAINING.value,
+        allow_val_change=True,
         config=experiment_config,
     ) as run:
         config = wandb.config
-        config.update({"allow_val_change": True})
         wandb_logger = WandbLogger(project=PROJECT, entity=ENTITY)
         data_artifact = run.use_artifact(f"{config.dataset}:latest")
         audio_dir = data_artifact.download()
