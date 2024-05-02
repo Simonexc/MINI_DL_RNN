@@ -13,12 +13,14 @@ def train_wrapper():
     data_artifact = wandb_logger.use_artifact(f"{config.dataset}:latest")
     audio_dir = data_artifact.download()
 
+    config_dict = config.as_dict()
+
     if hasattr(config, "config_dir"):
         config_artifact = wandb_logger.use_artifact(
-            f"{config.config_dir}:latest")
-        config.update({"config_dir": config_artifact.download()}, allow_val_change=True)
+            f"{config_dict['config_dir']}:latest")
+        config_dict["config_dir"] = config_artifact.download()
 
-    train(config, audio_dir, wandb_logger)
+    train(config_dict, audio_dir, wandb_logger)
 
 
 if __name__ == '__main__':
