@@ -11,14 +11,31 @@ parameters:
     value: TransformerASTEmbedding
   model_class:
     value: TransformerASTModel
+  batch_size:
+    value: 256
+  epochs:
+    value: 30
+  scheduler_factor:
+    value: 0.5
+  scheduler_patience:
+    value: 4
+
+  config_dir:
+    value: ast-feature-extractor-config
+  max_length:
+    value: 100
+
   feature_processor:
     value: ASTProcessor
-  batch_size:
-    value: 32
-  epochs:
-    value: 10
+  feature_processor_params:
+    value:
+      - config_dir
+      - max_length
+
   model_params:
     value:
+      - config_dir
+      - max_length
       - hidden_vector_size
       - heads_num
       - hidden_layer_size
@@ -28,11 +45,11 @@ parameters:
   lr:
     distribution: log_uniform_values
     min: 0.000001
-    max: 0.01
+    max: 0.001
   beta1:
     distribution: log_uniform_values
-    min: 0.7
-    max: 0.99999
+    min: 0.8
+    max: 0.9999
   beta2:
     distribution: log_uniform_values
     min: 0.9
@@ -40,16 +57,16 @@ parameters:
   l2_penalty:
     distribution: uniform
     min: 0
-    max: 0.3
+    max: 0.4
   dropout:
     distribution: uniform
     min: 0
-    max: 0.6
+    max: 0.5
   hidden_vector_size:
-    values: [128, 256, 512]
+    value: 512
   heads_num:
-    values: [2, 4, 6]
+    value: 4
   hidden_layer_size:
-    values: [512, 1024, 2048]
+    values: 2048
   layers_num:
-    values: [1, 2, 4, 6]
+    value: 4
