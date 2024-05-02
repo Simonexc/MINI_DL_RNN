@@ -45,8 +45,8 @@ def train(config: wandb.sdk.Config, audio_dir: str, wandb_logger: WandbLogger):
         config.lr,
         getattr(config, "l2_penalty", 0),
         (getattr(config, "beta1", 0.9), getattr(config, "beta2", 0.999)),
-        getattr(config, "scheduler_factor", 1),
-        getattr(config, "scheduler_patience", 0),
+        getattr(config, "scheduler_factor", None),
+        getattr(config, "scheduler_patience", None),
     )
     trainer.fit(pl_model, data)
     pl_model.load_best_model()

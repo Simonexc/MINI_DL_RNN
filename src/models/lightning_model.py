@@ -20,8 +20,8 @@ class LightningModel(pl.LightningModule):
         lr: float,
         l2_penalty: float,
         betas: tuple[float, float],
-        scheduler_factor: float,
-        scheduler_patience: int,
+        scheduler_factor: float | None,
+        scheduler_patience: int | None,
         upload_best_model: bool = True,
     ):
         super().__init__()
@@ -137,12 +137,14 @@ class LightningModel(pl.LightningModule):
             weight_decay=self.l2_penalty,
             betas=self.betas,
         )
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer,
-            factor=self.scheduler_factor,
-            patience=self.scheduler_patience,
-        )
-        return [optimizer], [{"scheduler": scheduler, "monitor": "validation/loss", "interval": "epoch", "frequency": 1}]
+        if self.scheduler_patience is not None and self.scheduler_factor is not None:
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer,
+                factor=self.scheduler_factor,
+                patience=self.scheduler_patience,
+            )
+            return [optimizer], [{"scheduler": scheduler, "monitor": "validation/loss", "interval": "epoch", "frequency": 1}]
+        return [optimizer], []
 
     def on_validation_epoch_start(self):
         self.valid_losses = []
