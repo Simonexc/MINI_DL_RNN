@@ -1,12 +1,14 @@
+import torchaudio.transforms as T
 from torch.utils.data import TensorDataset, DataLoader, default_collate
 from torch.utils.data.sampler import WeightedRandomSampler
 from torch import Tensor
-import lightning.pytorch as pl
 import torch
 import os
 
 from settings import SplitType
 from .feature_processors import BaseProcessor
+
+import lightning.pytorch as pl
 
 
 class SpeechDataset(pl.LightningDataModule):
@@ -56,10 +58,50 @@ class SpeechDataset(pl.LightningDataModule):
             x, y = default_collate(batch)
             if self.feature_processor is not None:
                 x = self.feature_processor(x)
-
             return x, y
-
         return collate_fn
+
+    def train_collate_fn(self, batch):
+        # Define transforms
+        spectrogram = T.Spectrogram(n_fft=400, win_length=400, hop_length=160, center=False, power=None)  # Returns complex spectrogram
+        amplitude_to_db = T.AmplitudeToDB()  # Converts magnitude to dB scale
+        time_stretch = T.TimeStretch(n_freq=201, fixed_rate=1.2) ##Te mozna pozmieniac
+        freq_mask = T.FrequencyMasking(freq_mask_param=30)  ##Te mozna pozmieniac
+        time_mask = T.TimeMasking(time_mask_param=100)  ##Te mozna pozmieniac
+        
+        processed_batch = []
+        for (waveform, label) in batch:
+            # Check if waveform needs to be unsqueezed
+            if waveform.dim() == 2:
+                waveform = waveform.unsqueeze(0)
+            
+            # Convert waveform to complex spectrogram
+            spec = spectrogram(waveform)
+            
+            # Apply Time Stretch
+            stretched_spec = time_stretch(spec)
+            
+            # Convert complex spectrogram to magnitude for masking
+            magnitude_spec = torch.abs(stretched_spec)
+            
+            # Convert magnitude to dB scale (if needed by your model or other transformations)
+            db_spec = amplitude_to_db(magnitude_spec)
+            
+            # Apply frequency and time masks
+            masked_spec = freq_mask(db_spec)
+            masked_spec = time_mask(masked_spec)
+            
+            # If necessary, convert back to waveform or other required format
+            # waveform = your_inverse_transform_here(masked_spec)
+            
+            if self.feature_processor:
+                waveform = self.feature_processor(waveform)
+            
+            processed_batch.append((waveform, label))
+
+        return default_collate(processed_batch)
+
+
 
     def train_dataloader(self) -> DataLoader:
         sampler = WeightedRandomSampler(
@@ -72,7 +114,7 @@ class SpeechDataset(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=4,
             sampler=sampler,
-            collate_fn=self._process_features(),
+            collate_fn=self.train_collate_fn,
         )
 
     def val_dataloader(self) -> DataLoader:
