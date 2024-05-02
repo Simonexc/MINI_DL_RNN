@@ -5,7 +5,7 @@ feature_processor: ASTProcessor
 config_file: ast-feature-extractor-config
 
 lr: 0.00003
-batch_size: 128
+batch_size: 64
 epochs: 20
 
 hidden_vector_size: 512
