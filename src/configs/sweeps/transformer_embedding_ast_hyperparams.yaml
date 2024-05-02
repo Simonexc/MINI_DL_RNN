@@ -1,4 +1,4 @@
-name: ast_hyperparams
+name: transformer_embedding_ast_hyperparams
 method: bayes
 metric:
   goal: minimize
