@@ -32,7 +32,6 @@ if __name__ == "__main__":
         project=PROJECT,
         entity=ENTITY,
         job_type=JobType.TRAINING.value,
-        allow_val_change=True,
         config=experiment_config,
     ) as run:
         config = wandb.config
@@ -43,6 +42,6 @@ if __name__ == "__main__":
         if hasattr(config, "config_dir"):
             config_artifact = run.use_artifact(
                 f"{config.config_dir}:latest")
-            config.config_dir = config_artifact.download()
+            config.update({"config_dir": config_artifact.download()}, allow_val_change=True)
 
         train(config, audio_dir, wandb_logger)
