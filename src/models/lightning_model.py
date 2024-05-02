@@ -34,8 +34,6 @@ class LightningModel(pl.LightningModule):
         self.scheduler_patience = scheduler_patience
         self.upload_best_model = upload_best_model
 
-        self.automatic_optimization = False
-
         # Metrics
         self.train_acc = torchmetrics.Accuracy(
             task="multiclass", num_classes=NUM_CLASSES, average="weighted"
@@ -144,7 +142,7 @@ class LightningModel(pl.LightningModule):
             factor=self.scheduler_factor,
             patience=self.scheduler_patience,
         )
-        return [optimizer], [{"scheduler": scheduler}]
+        return [optimizer], [{"scheduler": scheduler, "monitor": "validation/loss", "interval": "epoch", "frequency": 1}]
 
     def on_validation_epoch_start(self):
         self.valid_losses = []
@@ -226,9 +224,6 @@ class LightningModel(pl.LightningModule):
             self.lowest_valid_epoch = self.current_epoch
             self.lowest_valid_loss = avg_loss
             self.best_model_name = path
-
-        sch = self.lr_schedulers()
-        sch.step(self.trainer.callback_metrics["validation/loss"])
 
     def on_test_end(self):
         avg_loss = np.mean(self.test_losses)
