@@ -1,9 +1,7 @@
 import os
 import uuid
-from typing import Optional, Any
 
 import torch
-from lightning.pytorch.utilities.types import LRSchedulerTypeUnion
 from torch.nn import functional as F
 from torch import nn, Tensor
 import torchmetrics
