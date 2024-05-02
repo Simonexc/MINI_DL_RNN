@@ -1,7 +1,9 @@
 import os
 import uuid
+from typing import Optional, Any
 
 import torch
+from lightning.pytorch.utilities.types import LRSchedulerTypeUnion
 from torch.nn import functional as F
 from torch import nn, Tensor
 import torchmetrics
@@ -20,6 +22,8 @@ class LightningModel(pl.LightningModule):
         lr: float,
         l2_penalty: float,
         betas: tuple[float, float],
+        scheduler_factor: float,
+        scheduler_patience: int,
         upload_best_model: bool = True,
     ):
         super().__init__()
@@ -28,7 +32,11 @@ class LightningModel(pl.LightningModule):
         self.lr = lr
         self.l2_penalty = l2_penalty
         self.betas = betas
+        self.scheduler_factor = scheduler_factor
+        self.scheduler_patience = scheduler_patience
         self.upload_best_model = upload_best_model
+
+        self.automatic_optimization = False
 
         # Metrics
         self.train_acc = torchmetrics.Accuracy(
@@ -126,13 +134,19 @@ class LightningModel(pl.LightningModule):
 
         return logits, loss
 
-    def configure_optimizers(self) -> torch.optim.Optimizer:
-        return torch.optim.Adam(
+    def configure_optimizers(self) -> tuple[list[torch.optim.Optimizer], list[dict[str, torch.optim.lr_scheduler.LRScheduler]]]:
+        optimizer = torch.optim.Adam(
             self.parameters(),
             lr=self.lr,
             weight_decay=self.l2_penalty,
             betas=self.betas,
         )
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            factor=self.scheduler_factor,
+            patience=self.scheduler_patience,
+        )
+        return [optimizer], [{"scheduler": scheduler}]
 
     def on_validation_epoch_start(self):
         self.valid_losses = []
@@ -214,6 +228,9 @@ class LightningModel(pl.LightningModule):
             self.lowest_valid_epoch = self.current_epoch
             self.lowest_valid_loss = avg_loss
             self.best_model_name = path
+
+        sch = self.lr_schedulers()
+        sch.step(self.trainer.callback_metrics["validation/loss"])
 
     def on_test_end(self):
         avg_loss = np.mean(self.test_losses)

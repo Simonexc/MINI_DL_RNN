@@ -1,5 +1,6 @@
 from lightning.pytorch.loggers import WandbLogger
 import lightning.pytorch as pl
+from lightning.pytorch.callbacks import LearningRateMonitor
 import wandb
 
 from dataset.training_dataset import SpeechDataset
@@ -23,10 +24,13 @@ def train(config: wandb.sdk.Config, audio_dir: str, wandb_logger: WandbLogger):
     )
     data.setup()
 
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')
+
     trainer = pl.Trainer(
         logger=wandb_logger,
         log_every_n_steps=10,
         max_epochs=config.epochs,
+        callbacks=[lr_monitor]
     )
 
     model = getattr(models, config.model_class)(
@@ -41,6 +45,8 @@ def train(config: wandb.sdk.Config, audio_dir: str, wandb_logger: WandbLogger):
         config.lr,
         getattr(config, "l2_penalty", 0),
         (getattr(config, "beta1", 0.9), getattr(config, "beta2", 0.999)),
+        getattr(config, "scheduler_factor", 1),
+        getattr(config, "scheduler_patience", 0),
     )
     trainer.fit(pl_model, data)
     pl_model.load_best_model()
