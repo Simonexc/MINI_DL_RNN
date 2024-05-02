@@ -20,8 +20,6 @@ class LightningModel(pl.LightningModule):
         lr: float,
         l2_penalty: float,
         betas: tuple[float, float],
-        scheduler_patience: int | None,
-        scheduler_factor: float | None,
         upload_best_model: bool = True,
     ):
         super().__init__()
