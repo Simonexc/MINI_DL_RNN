@@ -9,7 +9,6 @@ from trainer.train import train
 def train_wrapper():
     wandb_logger = WandbLogger(project=PROJECT)
     config = wandb_logger.experiment.config
-    config.update(allow_val_change=True)
 
     data_artifact = wandb_logger.use_artifact(f"{config.dataset}:latest")
     audio_dir = data_artifact.download()
@@ -17,7 +16,7 @@ def train_wrapper():
     if hasattr(config, "config_dir"):
         config_artifact = wandb_logger.use_artifact(
             f"{config.config_dir}:latest")
-        config.config_dir = config_artifact.download()
+        config.update({"config_dir": config_artifact.download()}, allow_val_change=True)
 
     train(config, audio_dir, wandb_logger)
 
