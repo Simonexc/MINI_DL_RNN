@@ -67,6 +67,6 @@ parameters:
   heads_num:
     value: 4
   hidden_layer_size:
-    values: 2048
+    value: 2048
   layers_num:
     value: 4
