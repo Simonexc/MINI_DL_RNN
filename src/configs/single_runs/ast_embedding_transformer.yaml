@@ -6,8 +6,8 @@ beta1: 0.97
 beta2: 0.9
 scheduler_factor: 0.2
 scheduler_patience: 3
-batch_size: 128
-epochs: 30
+batch_size: 256
+epochs: 40
 
 config_dir: ast-feature-extractor-config
 max_length: 100
