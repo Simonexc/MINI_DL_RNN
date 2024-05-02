@@ -16,8 +16,8 @@ class BaseProcessor(ABC):
 
 
 class ASTProcessor(BaseProcessor):
-    def __init__(self, pretrained_path: str = "MIT/ast-finetuned-audioset-10-10-0.4593"):
-        self.feature_extractor = ASTFeatureExtractor.from_pretrained(pretrained_path)
+    def __init__(self, pretrained_path: str):
+        self.feature_extractor = ASTFeatureExtractor.from_pretrained(pretrained_path, local_files_only=True)
 
     def __call__(self, features: Tensor) -> Tensor:
         return self.feature_extractor(

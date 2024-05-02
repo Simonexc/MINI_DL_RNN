@@ -16,6 +16,7 @@ NUM_CLASSES = len(ALL_CLASSES)
 
 class JobType(Enum):
     UPLOAD_DATA = "upload-data"
+    UPLOAD_CONFIG = "upload-config"
     DOWNLOAD_DATA = "download-data"
     TRAINING = "training"
 
@@ -23,6 +24,7 @@ class JobType(Enum):
 class ArtifactType(Enum):
     DATASET = "dataset"
     MODEL = "model"
+    CONFIG_FILE = "config-file"
 
 
 class SplitType(Enum):
