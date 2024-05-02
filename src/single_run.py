@@ -38,9 +38,18 @@ if __name__ == "__main__":
         wandb_logger = WandbLogger(project=PROJECT, entity=ENTITY)
         data_artifact = run.use_artifact(f"{config.dataset}:latest")
         audio_dir = data_artifact.download()
-        config_dir = None
-        if hasattr(config, "config_file"):
-            config_artifact = run.use_artifact(f"{config.config_file}:latest", )
-            config_dir = config_artifact.download()
 
-        train(config, audio_dir, wandb_logger, config_dir)
+        if (
+            hasattr(config, "feature_processor_params")
+            and "processor_config_dir" in config.feature_processor_params
+        ):
+            config_artifact = run.use_artifact(
+                f"{config.processor_config_dir}:latest")
+            config.processor_config_dir = config_artifact.download()
+
+        if "model_config_dir" in config.model_params:
+            config_artifact = run.use_artifact(
+                f"{config.model_config_dir}:latest")
+            config.model_config_dir = config_artifact.download()
+
+        train(config, audio_dir, wandb_logger)

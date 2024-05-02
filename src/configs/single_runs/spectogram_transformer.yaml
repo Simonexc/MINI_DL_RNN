@@ -1,27 +1,27 @@
 dataset: speech-waveform
-model_name: TransformerASTEmbedding
-model_class: TransformerASTModel
+model_name: TransformerSpectogram
+model_class: TransformerSpectogramModel
 lr: 0.00003
 batch_size: 64
-epochs: 20
+epochs: 10
 
 config_dir: ast-feature-extractor-config
 max_length: 100
+num_mel_bins: 128
 
 feature_processor: ASTProcessor
 feature_processor_params:
   - config_dir
   - max_length
+  - num_mel_bins
 
 model_params:
-  - config_dir
   - max_length
-  - hidden_vector_size
+  - num_mel_bins
   - heads_num
   - hidden_layer_size
   - layers_num
   - dropout
-hidden_vector_size: 512
 heads_num: 4
 hidden_layer_size: 2048
 layers_num: 4

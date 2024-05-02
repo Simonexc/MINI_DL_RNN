@@ -8,12 +8,17 @@ from models.lightning_model import LightningModel
 import dataset.feature_processors as feature_processors
 
 
-def train(config: wandb.sdk.Config, audio_dir: str, wandb_logger: WandbLogger, config_dir: str | None):
+def train(config: wandb.sdk.Config, audio_dir: str, wandb_logger: WandbLogger):
     feature_processor: str | None = getattr(config, "feature_processor", None)
     data = SpeechDataset(
         audio_dir,
         config.batch_size,
-        feature_processor and getattr(feature_processors, feature_processor)(config_dir),
+        feature_processor and getattr(feature_processors, feature_processor)(
+            **{
+                key: getattr(config, key)
+                for key in getattr(config, "feature_processor_params", [])
+            }
+        ),
         getattr(config, "train_num_samples", None),
     )
     data.setup()

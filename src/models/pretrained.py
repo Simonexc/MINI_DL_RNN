@@ -1,16 +1,12 @@
 from torch import Tensor
-from transformers import ASTConfig, ASTForAudioClassification
+from transformers import ASTForAudioClassification
 
-from settings import NUM_CLASSES
+from dataset.utils import load_ast_config
 
 
 class FineTunedAST(ASTForAudioClassification):
-    def __init__(
-        self, pretrained_path: str = "MIT/ast-finetuned-audioset-10-10-0.4593"
-    ):
-        config = ASTConfig.from_pretrained(pretrained_path)
-        config.num_labels = NUM_CLASSES
-
+    def __init__(self, config_dir: str, **kwargs):
+        config = load_ast_config(config_dir, **kwargs)
         super().__init__(config)
 
     def forward(

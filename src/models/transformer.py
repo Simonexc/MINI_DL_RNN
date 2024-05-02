@@ -4,10 +4,10 @@ import torch
 from torch import nn, Tensor
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from transformers.models.audio_spectrogram_transformer.modeling_audio_spectrogram_transformer import ASTEmbeddings
-from transformers import ASTConfig
 
 from settings import NUM_CLASSES
 from .embeddings import FCEmbedding
+from dataset.utils import load_ast_config
 
 
 class TransformerModel(nn.Module):
@@ -56,23 +56,16 @@ class TransformerModel(nn.Module):
 class TransformerASTModel(nn.Module):
     def __init__(
         self,
+        config_dir: str,
+        max_length: int,
         hidden_vector_size: int,
         heads_num: int,
         hidden_layer_size: int,
         layers_num: int,
-        dropout: float = 0.2,
+        dropout: float,
     ):
         super().__init__()
-        config = ASTConfig(
-            hidden_size=hidden_vector_size,
-            patch_size=16,
-            num_mel_bins=128,
-            frequency_stride=10,
-            time_stride=10,
-            max_length=1024,
-            hidden_dropout_prob=dropout,
-            num_labels=NUM_CLASSES,
-        )
+        config = load_ast_config(config_dir, max_length=max_length, hidden_size=hidden_vector_size, hidden_dropout_prob=dropout)
 
         self.embedding = ASTEmbeddings(config)
         encoder_layers = TransformerEncoderLayer(hidden_vector_size, heads_num, hidden_layer_size, dropout, batch_first=True)
@@ -96,6 +89,45 @@ class TransformerASTModel(nn.Module):
             output Tensor of shape ``[batch_size, seq_len, ntoken]``
         """
         src = self.embedding(src)
+        output = self.transformer_encoder(src)
+        output = output.mean(dim=1)
+        output = self.linear(output)
+        return output
+
+
+class TransformerSpectogramModel(nn.Module):
+    def __init__(
+        self,
+        num_mel_bins: int,
+        max_length: int,
+        heads_num: int,
+        hidden_layer_size: int,
+        layers_num: int,
+        dropout: float,
+    ):
+        super().__init__()
+        self.pos_encoder = PositionalEncoding(num_mel_bins, dropout, max_len=max_length)
+        encoder_layers = TransformerEncoderLayer(num_mel_bins, heads_num, hidden_layer_size, dropout, batch_first=True)
+        self.transformer_encoder = TransformerEncoder(encoder_layers, layers_num)
+        self.hidden_vector_size = num_mel_bins
+        self.linear = nn.Linear(num_mel_bins, NUM_CLASSES)
+
+        self.init_weights()
+
+    def init_weights(self) -> None:
+        initrange = 0.1
+        self.linear.bias.data.zero_()
+        self.linear.weight.data.uniform_(-initrange, initrange)
+
+    def forward(self, src: Tensor) -> Tensor:
+        """
+        Arguments:
+            src: Tensor, shape ``[batch_size, waveform_length]``
+
+        Returns:
+            output Tensor of shape ``[batch_size, seq_len, ntoken]``
+        """
+        src = self.pos_encoder(src)
         output = self.transformer_encoder(src)
         output = output.mean(dim=1)
         output = self.linear(output)

@@ -17,8 +17,13 @@ parameters:
     value: 3
   epochs:
     value: 6
+  config_file:
+    value: ast-feature-extractor-config
   model_params:
-    value: [ ]
+    value:
+      - pretrained_path
+  pretrained_path:
+    value: ast-feature-extractor-config
 
   lr:
     distribution: log_uniform_values

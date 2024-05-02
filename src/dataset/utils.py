@@ -1,6 +1,7 @@
 import os
+from transformers import ASTConfig
 
-from settings import ALL_CLASSES, UNKNOWN_CLASS
+from settings import ALL_CLASSES, UNKNOWN_CLASS, NUM_CLASSES
 
 
 def load_annotation_file(path: str, base_dir: str) -> set[str]:
@@ -25,3 +26,12 @@ def get_class_name_from_audio_path(audio_path: str) -> str:
 def get_class_id_from_audio_path(audio_path: str) -> int:
     class_name = get_class_name_from_audio_path(audio_path)
     return ALL_CLASSES.index(class_name)
+
+
+def load_ast_config(config_dir: str, **kwargs) -> ASTConfig:
+    config = ASTConfig.from_pretrained(config_dir, local_files_only=True)
+    for key, item in kwargs.items():
+        setattr(config, key, item)
+    config.num_labels = NUM_CLASSES
+
+    return config

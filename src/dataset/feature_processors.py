@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 from torch import Tensor
-from transformers import ASTFeatureExtractor
+from transformers import ASTFeatureExtractor, ASTConfig
 
-from settings import AUDIO_FILE_METADATA
+from settings import AUDIO_FILE_METADATA, NUM_CLASSES
+from .utils import load_ast_config
 
 
 class BaseProcessor(ABC):
@@ -16,8 +17,9 @@ class BaseProcessor(ABC):
 
 
 class ASTProcessor(BaseProcessor):
-    def __init__(self, pretrained_path: str):
-        self.feature_extractor = ASTFeatureExtractor.from_pretrained(pretrained_path, local_files_only=True)
+    def __init__(self, config_dir: str, **kwargs):
+        config = load_ast_config(config_dir, **kwargs)
+        self.feature_extractor = ASTFeatureExtractor.from_dict(config.to_dict())
 
     def __call__(self, features: Tensor) -> Tensor:
         return self.feature_extractor(
