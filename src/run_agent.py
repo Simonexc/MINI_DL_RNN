@@ -9,12 +9,13 @@ from trainer.train import train
 def train_wrapper():
     wandb_logger = WandbLogger(project=PROJECT)
     config = wandb_logger.experiment.config
+    config.update(allow_val_change=True)
 
     data_artifact = wandb_logger.use_artifact(f"{config.dataset}:latest")
     audio_dir = data_artifact.download()
 
     if hasattr(config, "config_dir"):
-        config_artifact = run.use_artifact(
+        config_artifact = wandb_logger.use_artifact(
             f"{config.config_dir}:latest")
         config.config_dir = config_artifact.download()
 
