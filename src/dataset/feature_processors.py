@@ -36,37 +36,39 @@ class ASTProcessor(BaseProcessor):
         ).input_values
 
 
-class ASTAugmenter(ASTProcessor):
-    def __init__(self, config_dir: str, max_length: int, time_stretch: float, freq_mask: int, time_mask: int, **kwargs):
-        super().__init__(config_dir, max_length=max_length, **kwargs)
-        self.time_stretch = time_stretch
-        self.freq_mask = freq_mask
-        self.time_mask = time_mask
-        self.max_length = max_length
+class ASTAugmenterProcessor(ASTProcessor):
+    def __init__(self, config_dir: str, **kwargs):
+        self.time_stretch = kwargs.pop("time_stretch", None)
+        self.freq_mask = kwargs.pop("freq_mask", None)
+        self.time_mask = kwargs.pop("time_mask", None)
 
-    def apply_time_stretch(self, audio: np.ndarray, rate: float) -> np.ndarray:
-        if rate != 1.0:  # Only apply if the rate is not the default value
-            return librosa.effects.time_stretch(y=audio, rate=rate)
-        return audio
+        super().__init__(config_dir, **kwargs)
 
     def __call__(self, features: Tensor) -> Tensor:
-        # Convert tensor to numpy array for librosa processing
-        numpy_features = features.numpy()
-
         if self.time_stretch is not None:
-            numpy_features = self.apply_time_stretch(audio=numpy_features, rate=self.time_stretch)
+            rate = np.clip(np.random.standard_normal((1,)), -1, 1)[0] * self.time_stretch
+            features = torch.tensor(
+                librosa.effects.time_stretch(y=features.numpy(), rate=1 + rate),
+                dtype=torch.float32
+            )
+            if features.shape[1] > 16000:
+                idxs = np.random.randint(0, int(16000 / rate) - 16000, features.shape[0])
+                features = features[:, idxs:idxs+16000]
+            elif features.shape[1] < 16000:
+                features = torch.nn.functional.pad(features, (0, 16000 - features.shape[1]))
 
-        features = torch.tensor(numpy_features, dtype=torch.float32)
+        mel_spectogram = super().__call__(features)
 
         if self.freq_mask is not None:
             freq_mask = T.FrequencyMasking(freq_mask_param=self.freq_mask)
-            features = freq_mask(features)
+            mel_spectogram = freq_mask(mel_spectogram.transpose(1, 2)).transpose(1, 2)
 
         if self.time_mask is not None:
             time_mask = T.TimeMasking(time_mask_param=self.time_mask)
-            features = time_mask(features)
+            mel_spectogram = time_mask(mel_spectogram.transpose(1, 2)).transpose(1, 2)
 
-        return super().__call__(features)
+        return mel_spectogram
+
 
 class ASTNormalizedProcessor(ASTProcessor):
     def __call__(self, features: Tensor) -> Tensor:
