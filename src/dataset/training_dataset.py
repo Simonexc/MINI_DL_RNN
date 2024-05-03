@@ -35,7 +35,7 @@ class BaseDataset(pl.LightningDataModule, ABC):
     def data_loader_kwargs(self) -> dict:
         data = {}
         if sys.platform in ["linux", "darwin"]:
-            data["num_workers"] = 0
+            data["num_workers"] = len(os.sched_getaffinity(0))  # num of cpu cores
         return data
 
     @abstractmethod
