@@ -47,16 +47,21 @@ class ASTAugmenterProcessor(ASTProcessor):
     def __call__(self, features: Tensor) -> Tensor:
         if self.time_stretch is not None:
             rate = np.clip(np.random.standard_normal((1,)), -1, 1)[0] * self.time_stretch
+
             features = torch.tensor(
                 librosa.effects.time_stretch(y=features.numpy(), rate=1 + rate),
                 dtype=torch.float32
             )
+
             if features.shape[1] > 16000:
-                idxs = np.random.randint(0, features.shape[1] - 16000, features.shape[0])
-                features = features[:, idxs:idxs+16000]
+                start_idx = np.random.randint(0, features.shape[1] - 16000, features.shape[0])
+                idxs = np.ones(
+                    (features.shape[0], 16000)
+                ) * np.arange(16000).reshape(1, -1) + start_idx.reshape(-1, 1)
+                features = features.gather(1, torch.tensor(idxs, dtype=torch.int64))
             elif features.shape[1] < 16000:
                 features = torch.nn.functional.pad(features, (0, 16000 - features.shape[1]))
-        print(features.shape)
+
         mel_spectogram = super().__call__(features)
 
         if self.freq_mask is not None:

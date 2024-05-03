@@ -35,7 +35,7 @@ class BaseDataset(pl.LightningDataModule, ABC):
     def data_loader_kwargs(self) -> dict:
         data = {}
         if sys.platform in ["linux", "darwin"]:
-            data["num_workers"] = 4
+            data["num_workers"] = 0
         return data
 
     @abstractmethod
@@ -107,8 +107,7 @@ class SpeechDataset(BaseDataset):
 
     def _load_dataset(self, path: str) -> TensorDataset:
         x, y = torch.load(path)
-        if not isinstance(y, Tensor):
-            y = torch.tensor(y)
+        y = y.squeeze(1)
         return TensorDataset(x, y)
 
 
