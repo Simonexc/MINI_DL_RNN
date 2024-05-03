@@ -11,12 +11,14 @@ import librosa
 import numpy as np
 import torchaudio.transforms as T
 
+
 class BaseProcessor(ABC):
     @abstractmethod
     def __call__(self, features: Tensor) -> Tensor:
         """
         Convert features to correct format.
         """
+
 
 class ASTProcessor(BaseProcessor):
     def __init__(self, config_dir: str, **kwargs):
@@ -26,11 +28,13 @@ class ASTProcessor(BaseProcessor):
     def __call__(self, features: Tensor) -> Tensor:
         numpy_features = features.numpy()
         sr = AUDIO_FILE_METADATA.get("sample_rate", 16000)
+
         return self.feature_extractor(
             numpy_features,
             return_tensors="pt",
             sampling_rate=sr
         ).input_values
+
 
 class ASTAugmenter(ASTProcessor):
     def __init__(self, config_dir: str, max_length: int, time_stretch: float, freq_mask: int, time_mask: int, **kwargs):
@@ -66,9 +70,6 @@ class ASTAugmenter(ASTProcessor):
         return super().__call__(features_tensor)
 
 
-
-class ASTNormalizedProcessor(ASTAugmenter):
+class ASTNormalizedProcessor(ASTProcessor):
     def __call__(self, features: Tensor) -> Tensor:
         return (super().__call__(features) + 0.4722) / (2 * 0.54427)
-
-

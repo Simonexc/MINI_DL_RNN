@@ -8,6 +8,7 @@ import torchmetrics
 import lightning.pytorch as pl
 import numpy as np
 import wandb
+from wandb.sdk.artifacts.artifact import Artifact
 
 from settings import NUM_CLASSES, ALL_CLASSES, ArtifactType
 
@@ -76,6 +77,7 @@ class LightningModel(pl.LightningModule):
         self.test_losses = []
         self.test_probabilities = []
         self.test_true_values = []
+        self.test_class_ids = []
 
         # Model
         self.best_model_name = ""
@@ -88,6 +90,18 @@ class LightningModel(pl.LightningModule):
             os.mkdir(parent_dir)
         self.run_dir = os.path.join(parent_dir, f"runs_{uuid.uuid4().hex}")
         os.mkdir(self.run_dir)
+
+    @classmethod
+    def load_remote(self, artifact: Artifact) -> "LightningModel":
+        run = artifact.logged_by()
+
+        config = run.config.as_dict()
+
+
+        model_file_name = model_name[:model_name.rfind(":")] + ".pth"
+        model_path = artifact.download(path_prefix=model_file_name)
+
+        self.load_local(os.path.join(model_path, model_file_name))
 
     def _save_local(self):
         path = os.path.join(self.run_dir, f"epoch_{self.current_epoch}.pth")
@@ -109,13 +123,6 @@ class LightningModel(pl.LightningModule):
 
     def load_local(self, model_path: str):
         self.load_state_dict(torch.load(model_path))
-
-    def load_remote(self, model_name: str):
-        artifact = self.logger.use_artifact(model_name)
-        model_file_name = model_name[:model_name.rfind(":")] + ".pth"
-        model_path = artifact.download(path_prefix=model_file_name)
-
-        self.load_local(os.path.join(model_path, model_file_name))
 
     def load_best_model(self):
         self.load_local(self.best_model_name)
@@ -238,6 +245,7 @@ class LightningModel(pl.LightningModule):
         flattened_probabilities = torch.flatten(
             torch.cat(self.test_probabilities)).view(-1, NUM_CLASSES).to(
             "cpu")
+        self.test_class_ids = flattened_probabilities.argmax(dim=1)
         flattened_true_values = torch.flatten(torch.cat(self.test_true_values)).to(
             "cpu")
         self.logger.experiment.log(

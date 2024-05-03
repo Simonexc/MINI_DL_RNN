@@ -12,6 +12,7 @@ AUDIO_FILE_METADATA = {
     "num_channels": 1,
 }
 NUM_CLASSES = len(ALL_CLASSES)
+DATA_DIR = "../data"
 
 
 class JobType(Enum):
@@ -19,12 +20,14 @@ class JobType(Enum):
     UPLOAD_CONFIG = "upload-config"
     DOWNLOAD_DATA = "download-data"
     TRAINING = "training"
+    KAGGLE_TEST = "kaggle-test"
 
 
 class ArtifactType(Enum):
     DATASET = "dataset"
     MODEL = "model"
     CONFIG_FILE = "config-file"
+    KAGGLE_RESULTS = "kaggle-results"
 
 
 class SplitType(Enum):
