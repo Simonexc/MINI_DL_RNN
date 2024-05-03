@@ -8,7 +8,6 @@ import torchmetrics
 import lightning.pytorch as pl
 import numpy as np
 import wandb
-from wandb.sdk.artifacts.artifact import Artifact
 
 from settings import NUM_CLASSES, ALL_CLASSES, ArtifactType
 
@@ -34,6 +33,7 @@ class LightningModel(pl.LightningModule):
         self.scheduler_factor = scheduler_factor
         self.scheduler_patience = scheduler_patience
         self.upload_best_model = upload_best_model
+        self.log_test = True
 
         # Metrics
         self.train_acc = torchmetrics.Accuracy(
@@ -90,18 +90,6 @@ class LightningModel(pl.LightningModule):
             os.mkdir(parent_dir)
         self.run_dir = os.path.join(parent_dir, f"runs_{uuid.uuid4().hex}")
         os.mkdir(self.run_dir)
-
-    @classmethod
-    def load_remote(self, artifact: Artifact) -> "LightningModel":
-        run = artifact.logged_by()
-
-        config = run.config.as_dict()
-
-
-        model_file_name = model_name[:model_name.rfind(":")] + ".pth"
-        model_path = artifact.download(path_prefix=model_file_name)
-
-        self.load_local(os.path.join(model_path, model_file_name))
 
     def _save_local(self):
         path = os.path.join(self.run_dir, f"epoch_{self.current_epoch}.pth")
@@ -210,14 +198,15 @@ class LightningModel(pl.LightningModule):
         preds = torch.argmax(logits, 1)
 
         self.log(f"test/loss", loss, on_epoch=True, on_step=False)
-        self.test_acc(preds, ys)
-        self.log(f'test/accuracy', self.test_acc, on_epoch=True, on_step=False)
-        self.test_prec(preds, ys)
-        self.log("test/precision", self.test_prec, on_epoch=True, on_step=False)
-        self.test_recall(preds, ys)
-        self.log("test/recall", self.test_recall, on_epoch=True, on_step=False)
-        self.test_f1score(preds, ys)
-        self.log("test/f1_score", self.test_f1score, on_epoch=True, on_step=False)
+        if self.log_test:
+            self.test_acc(preds, ys)
+            self.log(f'test/accuracy', self.test_acc, on_epoch=True, on_step=False)
+            self.test_prec(preds, ys)
+            self.log("test/precision", self.test_prec, on_epoch=True, on_step=False)
+            self.test_recall(preds, ys)
+            self.log("test/recall", self.test_recall, on_epoch=True, on_step=False)
+            self.test_f1score(preds, ys)
+            self.log("test/f1_score", self.test_f1score, on_epoch=True, on_step=False)
 
         self.test_losses.append(loss.cpu())
         self.test_probabilities.append(torch.exp(logits))
@@ -248,9 +237,11 @@ class LightningModel(pl.LightningModule):
         self.test_class_ids = flattened_probabilities.argmax(dim=1)
         flattened_true_values = torch.flatten(torch.cat(self.test_true_values)).to(
             "cpu")
-        self.logger.experiment.log(
-            {"test/confusion_matrix": wandb.plot.confusion_matrix(
-                probs=flattened_probabilities,
-                y_true=flattened_true_values.numpy().tolist(),
-                class_names=ALL_CLASSES)}
-        )
+
+        if self.log_test:
+            self.logger.experiment.log(
+                {"test/confusion_matrix": wandb.plot.confusion_matrix(
+                    probs=flattened_probabilities,
+                    y_true=flattened_true_values.numpy().tolist(),
+                    class_names=ALL_CLASSES)}
+            )

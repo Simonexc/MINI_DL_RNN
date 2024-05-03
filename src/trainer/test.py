@@ -7,6 +7,7 @@ def test(config: dict, audio_dir: str, wandb_logger: WandbLogger, model_checkpoi
     trainer, pl_model, data = prepare_session(config, audio_dir, wandb_logger)
     data.setup("test")
     pl_model.load_local(model_checkpoint)
+    pl_model.log_test = False
     trainer.test(pl_model, data)
 
     return (
