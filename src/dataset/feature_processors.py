@@ -27,3 +27,8 @@ class ASTProcessor(BaseProcessor):
             return_tensors="pt",
             sampling_rate=AUDIO_FILE_METADATA["sample_rate"],
         ).input_values
+
+
+class ASTNormalizedProcessor(BaseProcessor):
+    def __call__(self, features: Tensor) -> Tensor:
+        return (super().__call__(features) + 0.4722) / (2 * 0.54427)

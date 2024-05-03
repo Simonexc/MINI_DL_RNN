@@ -12,7 +12,7 @@ epochs: 40
 config_dir: ast-feature-extractor-config
 max_length: 100
 
-feature_processor: ASTProcessor
+feature_processor: ASTNormalizedProcessor
 feature_processor_params:
   - config_dir
   - max_length
