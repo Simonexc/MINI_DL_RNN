@@ -56,7 +56,7 @@ class ASTAugmenterProcessor(ASTProcessor):
                 features = features[:, idxs:idxs+16000]
             elif features.shape[1] < 16000:
                 features = torch.nn.functional.pad(features, (0, 16000 - features.shape[1]))
-
+        print(features.shape)
         mel_spectogram = super().__call__(features)
 
         if self.freq_mask is not None:
