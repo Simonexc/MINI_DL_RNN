@@ -40,31 +40,29 @@ class ASTAugmenter(ASTProcessor):
         self.time_mask = time_mask
         self.max_length = max_length
 
-    def apply_time_stretch(self, audio, rate):
+    def apply_time_stretch(self, audio: np.ndarray, rate: float) -> np.ndarray:
         if rate != 1.0:  # Only apply if the rate is not the default value
-            return librosa.effects.time_stretch(audio, rate=rate)
+            return librosa.effects.time_stretch(y=audio, rate=rate)
         return audio
 
     def __call__(self, features: Tensor) -> Tensor:
+        # Convert tensor to numpy array for librosa processing
         numpy_features = features.numpy()
-        sr = AUDIO_FILE_METADATA.get("sample_rate", 16000)
 
         if self.time_stretch is not None:
             numpy_features = self.apply_time_stretch(audio=numpy_features, rate=self.time_stretch)
 
+        features = torch.tensor(numpy_features, dtype=torch.float32)
+
         if self.freq_mask is not None:
-            freq_mask = T.FrequencyMasking(self.freq_mask)
-            tensor_features = torch.tensor(numpy_features, dtype=torch.float32).clone().detach()  # clone and detach
-            numpy_features = freq_mask(tensor_features).numpy()
+            freq_mask = T.FrequencyMasking(freq_mask_param=self.freq_mask)
+            features = freq_mask(features)
 
         if self.time_mask is not None:
-            time_mask = T.TimeMasking(self.time_mask)
-            tensor_features = torch.tensor(numpy_features, dtype=torch.float32).clone().detach()  # clone and detach
-            numpy_features = time_mask(tensor_features).numpy()
+            time_mask = T.TimeMasking(time_mask_param=self.time_mask)
+            features = time_mask(features)
 
-        features_tensor = torch.tensor(numpy_features, dtype=torch.float32).clone().detach()  # clone and detach
-        return super().__call__(features_tensor)
-
+        return super().__call__(features)
 
 
 class ASTNormalizedProcessor(ASTAugmenter):
