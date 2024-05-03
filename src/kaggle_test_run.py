@@ -41,7 +41,8 @@ if __name__ == "__main__":
 
         model_artifact = run.use_artifact(args.model_name)
         run = model_artifact.logged_by()
-        config_dict = json.loads(run.json_config)
+        config_dict = run.config
+        print(config_dict)
         model_path = model_artifact.download(path_prefix=config_dict["model_name"])
 
         if "config_dir" in config_dict:
