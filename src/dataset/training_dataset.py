@@ -4,6 +4,7 @@ from torch import Tensor
 import lightning.pytorch as pl
 import torch
 import os
+import sys
 
 from settings import SplitType
 from .feature_processors import BaseProcessor
@@ -29,10 +30,18 @@ class SpeechDataset(pl.LightningDataModule):
 
         self.train_weights: Tensor | None = None
 
+    @property
+    def data_loader_kwargs(self) -> dict:
+        data = {}
+        if sys.platform in ["linux", "darwin"]:
+            data["num_workers"] = 4
+        return data
+
     @staticmethod
     def _load_dataset(path: str) -> TensorDataset:
         x, y = torch.load(path)
-        y = y.squeeze(1)
+        if not isinstance(y, Tensor):
+            y = torch.tensor(y)
         return TensorDataset(x, y)
 
     def setup(self, stage: str | None = None):
@@ -72,6 +81,7 @@ class SpeechDataset(pl.LightningDataModule):
             batch_size=self.batch_size,
             sampler=sampler,
             collate_fn=self._process_features(),
+            **self.data_loader_kwargs,
         )
 
     def val_dataloader(self) -> DataLoader:
@@ -80,6 +90,7 @@ class SpeechDataset(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             collate_fn=self._process_features(),
+            **self.data_loader_kwargs,
         )
 
     def test_dataloader(self) -> DataLoader:
@@ -88,4 +99,5 @@ class SpeechDataset(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             collate_fn=self._process_features(),
+            **self.data_loader_kwargs,
         )

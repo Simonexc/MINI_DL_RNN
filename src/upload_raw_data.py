@@ -13,10 +13,8 @@ import shutil
 from pathlib import Path
 import uuid
 
-from settings import PROJECT, ENTITY, JobType, ArtifactType, AUDIO_FILE_METADATA, SplitType
+from settings import PROJECT, ENTITY, JobType, ArtifactType, AUDIO_FILE_METADATA, SplitType, DATA_DIR
 from dataset.utils import load_annotation_file, get_class_name_from_audio_path
-
-DATA_DIR = "../data"
 
 
 def split_background_noises(
