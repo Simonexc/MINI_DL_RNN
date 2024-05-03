@@ -40,8 +40,8 @@ class SpeechDataset(pl.LightningDataModule):
     @staticmethod
     def _load_dataset(path: str) -> TensorDataset:
         x, y = torch.load(path)
-        if len(y.shape) > 1:
-            y = y.squeeze(1)
+        if not isinstance(y, Tensor):
+            y = torch.tensor(y)
         return TensorDataset(x, y)
 
     def setup(self, stage: str | None = None):
