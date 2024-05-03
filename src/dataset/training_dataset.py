@@ -60,11 +60,11 @@ class BaseDataset(pl.LightningDataModule, ABC):
                 os.path.join(self.dataset_dir, f"{SplitType.TEST.value}.pt")
             )
 
-    def _process_features(self):
+    def _process_features(self, is_train: bool = False):
         def collate_fn(batch):
             x, y = default_collate(batch)
             if self.feature_processor is not None:
-                x = self.feature_processor(x)
+                x = self.feature_processor(x, is_train)
 
             return x, y
 
@@ -80,7 +80,7 @@ class BaseDataset(pl.LightningDataModule, ABC):
             self.train,
             batch_size=self.batch_size,
             sampler=sampler,
-            collate_fn=self._process_features(),
+            collate_fn=self._process_features(is_train=True),
             **self.data_loader_kwargs,
         )
 

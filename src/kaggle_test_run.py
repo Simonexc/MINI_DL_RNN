@@ -62,7 +62,7 @@ if __name__ == "__main__":
             type=ArtifactType.KAGGLE_RESULTS.value,
         )
 
-        with artifact.new_file("kaggle_results.pth", mode="wb") as file:
+        with artifact.new_file("kaggle_results.csv", mode="wb") as file:
             df.to_csv(file, sep=",", index=False)
 
         print(run.log_artifact(artifact))

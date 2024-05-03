@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Callable
 import torch
 from torch import Tensor
-from transformers import ASTFeatureExtractor, ASTConfig
+from transformers import ASTFeatureExtractor
 
-from settings import AUDIO_FILE_METADATA, NUM_CLASSES
+from settings import AUDIO_FILE_METADATA
 from .utils import load_ast_config
 
 import librosa
@@ -14,7 +14,7 @@ import torchaudio.transforms as T
 
 class BaseProcessor(ABC):
     @abstractmethod
-    def __call__(self, features: Tensor) -> Tensor:
+    def __call__(self, features: Tensor, is_train: bool = False) -> Tensor:
         """
         Convert features to correct format.
         """
@@ -25,7 +25,7 @@ class ASTProcessor(BaseProcessor):
         config = load_ast_config(config_dir, **kwargs)
         self.feature_extractor = ASTFeatureExtractor.from_dict(config.to_dict())
 
-    def __call__(self, features: Tensor) -> Tensor:
+    def __call__(self, features: Tensor, is_train: bool = False) -> Tensor:
         numpy_features = features.numpy()
         sr = AUDIO_FILE_METADATA.get("sample_rate", 16000)
 
@@ -44,7 +44,10 @@ class ASTAugmenterProcessor(ASTProcessor):
 
         super().__init__(config_dir, **kwargs)
 
-    def __call__(self, features: Tensor) -> Tensor:
+    def __call__(self, features: Tensor, is_train: bool = False) -> Tensor:
+        if not is_train:
+            return super().__call__(features)
+
         if self.time_stretch is not None:
             rate = np.clip(np.random.standard_normal((1,)), -1, 1)[0] * self.time_stretch
 
@@ -76,5 +79,5 @@ class ASTAugmenterProcessor(ASTProcessor):
 
 
 class ASTNormalizedProcessor(ASTProcessor):
-    def __call__(self, features: Tensor) -> Tensor:
+    def __call__(self, features: Tensor, is_train: bool = False) -> Tensor:
         return (super().__call__(features) + 0.4722) / (2 * 0.54427)
