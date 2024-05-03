@@ -52,7 +52,7 @@ class ASTAugmenterProcessor(ASTProcessor):
                 dtype=torch.float32
             )
             if features.shape[1] > 16000:
-                idxs = np.random.randint(0, int(16000 / rate) - 16000, features.shape[0])
+                idxs = np.random.randint(0, features.shape[1] - 16000, features.shape[0])
                 features = features[:, idxs:idxs+16000]
             elif features.shape[1] < 16000:
                 features = torch.nn.functional.pad(features, (0, 16000 - features.shape[1]))
