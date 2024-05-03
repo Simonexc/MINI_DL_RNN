@@ -51,7 +51,11 @@ if __name__ == "__main__":
             )
             config_dict["config_dir"] = config_artifact.download()
 
-        df = pd.DataFrame(test(config_dict, audio_dir, wandb_logger, model_path), columns=["fname", "label"])
+        file_names, labels = test(config_dict, audio_dir, wandb_logger, model_path)
+        df = pd.DataFrame({
+            "fname": file_names,
+            "label": labels,
+        })
 
         artifact = wandb.Artifact(
             name=f"kaggle_results_{config_dict['model_name']}",
