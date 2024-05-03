@@ -40,14 +40,15 @@ if __name__ == "__main__":
         audio_dir = data_artifact.download()
 
         model_artifact = run.use_artifact(args.model_name)
-        run = model_artifact.logged_by()
-        config_dict = run.config
+        model_run = model_artifact.logged_by()
+        config_dict: dict = model_run.config
         print(config_dict)
         model_path = model_artifact.download(path_prefix=config_dict["model_name"])
 
         if "config_dir" in config_dict:
             config_artifact = run.use_artifact(
-                f"{config_dict['config_dir']}:latest")
+                f"{config_dict['config_dir']}:latest"
+            )
             config_dict["config_dir"] = config_artifact.download()
 
         df = pd.DataFrame(test(config_dict, audio_dir, wandb_logger, model_path), columns=["fname", "label"])
