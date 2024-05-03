@@ -70,7 +70,6 @@ class SpeechDataset(pl.LightningDataModule):
         return DataLoader(
             self.train,
             batch_size=self.batch_size,
-            num_workers=4,
             sampler=sampler,
             collate_fn=self._process_features(),
         )
@@ -79,7 +78,6 @@ class SpeechDataset(pl.LightningDataModule):
         return DataLoader(
             self.val,
             batch_size=self.batch_size,
-            num_workers=4,
             shuffle=False,
             collate_fn=self._process_features(),
         )
@@ -88,7 +86,6 @@ class SpeechDataset(pl.LightningDataModule):
         return DataLoader(
             self.test,
             batch_size=self.batch_size,
-            num_workers=4,
             shuffle=False,
             collate_fn=self._process_features(),
         )

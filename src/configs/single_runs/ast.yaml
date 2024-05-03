@@ -14,6 +14,11 @@ feature_processor: ASTProcessor
 feature_processor_params:
   - config_dir
   - max_length
+augmentations:
+  spectrogram: true
+  time_stretch: 1.1  # Stretch by 10%
+  freq_mask: 30     # Maximum frequency mask width
+  time_mask: 100    # Maximum time mask width
 
 model_params:
   - config_dir
