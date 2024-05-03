@@ -121,4 +121,4 @@ class KaggleTestDataset(BaseDataset):
         x, y = torch.load(path)
         self.file_names = list(y)
 
-        return TensorDataset(x, torch.zeros(x.shape[0]))
+        return TensorDataset(x, torch.zeros(x.shape[0]).long())
