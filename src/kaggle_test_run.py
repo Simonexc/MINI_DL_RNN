@@ -1,5 +1,5 @@
 import argparse
-import json
+import os
 import wandb
 
 from lightning.pytorch.loggers import WandbLogger
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         model_run = model_artifact.logged_by()
         config_dict: dict = model_run.config
         print(config_dict)
-        model_path = model_artifact.download(path_prefix=config_dict["model_name"])
+        model_path = os.path.join(model_artifact.download(), f"{config_dict['model_name']}.pth")
 
         if "config_dir" in config_dict:
             config_artifact = run.use_artifact(
