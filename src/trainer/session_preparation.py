@@ -1,8 +1,10 @@
+from typing import Type
+
 from lightning.pytorch.loggers import WandbLogger
 import lightning.pytorch as pl
 from lightning.pytorch.callbacks import LearningRateMonitor
 
-from dataset.training_dataset import SpeechDataset
+from dataset.training_dataset import BaseDataset
 import models
 from models.lightning_model import LightningModel
 import dataset.feature_processors as feature_processors
@@ -11,10 +13,11 @@ import dataset.feature_processors as feature_processors
 def prepare_session(
     config: dict,
     audio_dir: str,
-    wandb_logger: WandbLogger
-) -> tuple[pl.Trainer, LightningModel, SpeechDataset]:
+    wandb_logger: WandbLogger,
+    dataset_class: Type[BaseDataset],
+) -> tuple[pl.Trainer, LightningModel, BaseDataset]:
     feature_processor: str | None = config.get("feature_processor", None)
-    data = SpeechDataset(
+    data = dataset_class(
         audio_dir,
         config["batch_size"],
         feature_processor and getattr(feature_processors, feature_processor)(

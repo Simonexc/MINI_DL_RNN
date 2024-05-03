@@ -197,8 +197,8 @@ class LightningModel(pl.LightningModule):
         logits, loss = self.loss(xs, ys)
         preds = torch.argmax(logits, 1)
 
-        self.log(f"test/loss", loss, on_epoch=True, on_step=False)
         if self.log_test:
+            self.log(f"test/loss", loss, on_epoch=True, on_step=False)
             self.test_acc(preds, ys)
             self.log(f'test/accuracy', self.test_acc, on_epoch=True, on_step=False)
             self.test_prec(preds, ys)

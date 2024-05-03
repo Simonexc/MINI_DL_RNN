@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from torch.utils.data import TensorDataset, DataLoader, default_collate
 from torch.utils.data.sampler import WeightedRandomSampler
 from torch import Tensor
@@ -10,7 +11,7 @@ from settings import SplitType
 from .feature_processors import BaseProcessor
 
 
-class SpeechDataset(pl.LightningDataModule):
+class BaseDataset(pl.LightningDataModule, ABC):
     def __init__(
         self,
         dataset_dir: str,
@@ -37,12 +38,11 @@ class SpeechDataset(pl.LightningDataModule):
             data["num_workers"] = 4
         return data
 
-    @staticmethod
-    def _load_dataset(path: str) -> TensorDataset:
-        x, y = torch.load(path)
-        if not isinstance(y, Tensor):
-            y = torch.tensor(y)
-        return TensorDataset(x, y)
+    @abstractmethod
+    def _load_dataset(self, path: str) -> TensorDataset:
+        """
+        Load dataset from file and convert to TensorDataset.
+        """
 
     def setup(self, stage: str | None = None):
         if stage == 'fit' or stage is None:
@@ -101,3 +101,24 @@ class SpeechDataset(pl.LightningDataModule):
             collate_fn=self._process_features(),
             **self.data_loader_kwargs,
         )
+
+
+class SpeechDataset(BaseDataset):
+
+    def _load_dataset(self, path: str) -> TensorDataset:
+        x, y = torch.load(path)
+        if not isinstance(y, Tensor):
+            y = torch.tensor(y)
+        return TensorDataset(x, y)
+
+
+class KaggleTestDataset(BaseDataset):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.file_names = []
+
+    def _load_dataset(self, path: str) -> TensorDataset:
+        x, y = torch.load(path)
+        self.file_names = list(y)
+
+        return TensorDataset(x, torch.zeros(x.shape[0]))
