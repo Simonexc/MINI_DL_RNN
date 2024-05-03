@@ -29,6 +29,6 @@ class ASTProcessor(BaseProcessor):
         ).input_values
 
 
-class ASTNormalizedProcessor(BaseProcessor):
+class ASTNormalizedProcessor(ASTProcessor):
     def __call__(self, features: Tensor) -> Tensor:
         return (super().__call__(features) + 0.4722) / (2 * 0.54427)
