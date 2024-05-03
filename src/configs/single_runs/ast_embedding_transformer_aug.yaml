@@ -17,6 +17,8 @@ feature_processor_params:
   - config_dir
   - max_length
   - time_stretch
+  - freq_mask
+  - time_mask
 time_stretch: 0.3
 freq_mask: 50
 time_mask: 50
