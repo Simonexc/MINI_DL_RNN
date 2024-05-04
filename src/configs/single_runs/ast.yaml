@@ -1,29 +1,22 @@
 dataset: speech-waveform
 model_name: ASTEmbeddingTransformer
 model_class: FineTunedAST
-lr: 0.000005
-beta1: 0.93
-beta2: 0.9
+lr: 0.00005
 batch_size: 32
 epochs: 20
 
 config_dir: ast-feature-extractor-config
 max_length: 100
-time_stretch: 1.1  # Stretch by 10%
-freq_mask: 30     # Maximum frequency mask width
-time_mask: 10    # Maximum time mask width
 
-feature_processor: ASTNormalizedProcessor
+feature_processor: ASTProcessor
 feature_processor_params:
   - config_dir
   - max_length
-  - time_stretch
-  - freq_mask
-  - time_mask
 
 model_params:
   - config_dir
   - max_length
-  - time_stretch
-  - freq_mask
-  - time_mask
+  - attention_probs_dropout_prob
+  - hidden_dropout_prob
+attention_probs_dropout_prob: 0.2
+hidden_dropout_prob: 0.2
