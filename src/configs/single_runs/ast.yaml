@@ -2,8 +2,10 @@ dataset: speech-waveform
 model_name: ASTEmbeddingTransformer
 model_class: FineTunedAST
 lr: 0.00005
-batch_size: 32
-epochs: 20
+batch_size: 256
+scheduler_factor: 0.2
+scheduler_patience: 8
+epochs: 40
 
 config_dir: ast-feature-extractor-config
 max_length: 100
