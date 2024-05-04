@@ -6,14 +6,21 @@ lr: 0.001 # Learning rate
 batch_size: 256
 epochs: 20
 
-input_size: 3200
-embedding_hidden: 512 # Hidden units in embedding layer
-hidden_vector_size: 128 # LSTM hidden state size
+config_dir: ast-feature-extractor-config
+max_length: 100
+num_mel_bins: 128
+
+feature_processor: ASTProcessor
+feature_processor_params:
+  - config_dir
+  - max_length
+  - num_mel_bins
+
+hidden_layer_size: 512 # LSTM hidden state size
 layers_num: 2 # Number of LSTM layers
-dropout: 0.5 # Dropout rate in LSTM for regularization
+dropout: 0.2 # Dropout rate in LSTM for regularization
 model_params:
-  - input_size
-  - embedding_hidden
-  - hidden_vector_size
+  - num_mel_bins
+  - hidden_layer_size
   - layers_num
   - dropout
