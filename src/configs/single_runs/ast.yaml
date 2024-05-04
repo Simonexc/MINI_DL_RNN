@@ -10,10 +10,16 @@ epochs: 40
 config_dir: ast-feature-extractor-config
 max_length: 100
 
-feature_processor: ASTProcessor
+feature_processor: ASTAugmenterProcessor
 feature_processor_params:
   - config_dir
   - max_length
+  - time_stretch
+  - freq_mask
+  - time_mask
+time_stretch: 0.3
+freq_mask: 30
+time_mask: 30
 
 model_params:
   - config_dir

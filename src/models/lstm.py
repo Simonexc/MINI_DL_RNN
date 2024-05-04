@@ -55,7 +55,7 @@ class RNNModel(nn.Module):
         self.linear.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, src: Tensor) -> Tensor:
-        output, (hidden, _) = self.rnn(src)
+        output, _ = self.rnn(src)
         output = output.mean(dim=1)
         output = self.linear(output)
         return output
