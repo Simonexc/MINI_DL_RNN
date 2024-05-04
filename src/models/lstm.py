@@ -10,13 +10,14 @@ class LSTMModel(nn.Module):
         num_mel_bins: int,
         hidden_layer_size: int,
         layers_num: int,
+        bidirectional: bool,
         dropout: float = 0.2,
     ):
         super().__init__()
         self.lstm = nn.LSTM(
-            num_mel_bins, hidden_layer_size, layers_num, batch_first=True, dropout=dropout
+            num_mel_bins, hidden_layer_size, layers_num, bidirectional=bidirectional, batch_first=True, dropout=dropout
         )
-        self.linear = nn.Linear(hidden_layer_size, NUM_CLASSES)
+        self.linear = nn.Linear(hidden_layer_size * (2 if bidirectional else 1), NUM_CLASSES)
 
         self.init_weights()
 

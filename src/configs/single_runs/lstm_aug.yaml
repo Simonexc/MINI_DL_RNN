@@ -12,11 +12,17 @@ config_dir: ast-feature-extractor-config
 max_length: 100
 num_mel_bins: 128
 
-feature_processor: ASTProcessor
+feature_processor: ASTAugmenterProcessor
 feature_processor_params:
   - config_dir
   - max_length
   - num_mel_bins
+  - time_stretch
+  - freq_mask
+  - time_mask
+time_stretch: 0.3
+freq_mask: 30
+time_mask: 30
 
 hidden_layer_size: 512 # LSTM hidden state size
 layers_num: 2 # Number of LSTM layers
