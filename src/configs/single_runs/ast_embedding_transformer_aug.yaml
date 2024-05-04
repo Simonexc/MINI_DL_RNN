@@ -7,7 +7,7 @@ beta2: 0.977
 scheduler_factor: 0.2
 scheduler_patience: 8
 batch_size: 256
-epochs: 50
+epochs: 70
 
 config_dir: ast-feature-extractor-config
 max_length: 100
@@ -20,8 +20,8 @@ feature_processor_params:
   - freq_mask
   - time_mask
 time_stretch: 0.3
-freq_mask: 50
-time_mask: 50
+freq_mask: 30
+time_mask: 30
 
 model_params:
   - config_dir
